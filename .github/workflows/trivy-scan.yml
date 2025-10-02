@@ -1,0 +1,37 @@
+name: Trivy scan (SCA)
+
+on:
+  pull_request:
+    paths:
+      - '**/*.py'
+      - 'requirements.txt'
+      - 'pyproject.toml'
+      - 'Pipfile'
+      - 'Dockerfile'
+
+jobs:
+  trivy-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python (cache pip)
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install pip-tools (optional)
+        run: |
+          python -m pip install --upgrade pip
+
+      - name: Run Trivy filesystem scan for libs and OS
+        uses: aquasecurity/trivy-action@v0.12.2
+        with:
+          scan-type: 'filesystem'          # scan local files (requirements.txt)
+          vuln-type: 'os,library'         # os packages + libraries
+          format: 'table'
+          severity: 'CRITICAL,HIGH'       # consider only these severities
+          ignore-unfixed: false
+          output: 'trivy-report.txt'
+          exit-code: '1'                  # causa falha do job se encontrar HIGH/CRITICAL
